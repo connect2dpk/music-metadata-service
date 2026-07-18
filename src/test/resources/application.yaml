@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: music-metadata-service-test
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+
+  flyway:
+    enabled: true
+
+logging:
+  level:
+    org.flywaydb: WARN
