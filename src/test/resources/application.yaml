@@ -2,6 +2,10 @@ spring:
   application:
     name: music-metadata-service-test
 
+  docker:
+    compose:
+      enabled: false
+
   jpa:
     open-in-view: false
     hibernate:

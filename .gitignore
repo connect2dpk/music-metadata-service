@@ -1,4 +1,3 @@
-README.md
 target/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
@@ -40,3 +39,4 @@ logs/
 .DS_Store
 
 docker-data/
+/Requirement.md
