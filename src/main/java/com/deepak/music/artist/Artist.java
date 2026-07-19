@@ -22,6 +22,7 @@ public class Artist {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @Column(nullable = false, length = 255)
     private String name;
 
     @CreationTimestamp

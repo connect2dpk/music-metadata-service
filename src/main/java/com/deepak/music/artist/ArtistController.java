@@ -2,6 +2,7 @@ package com.deepak.music.artist;
 
 import com.deepak.music.artist.dto.ArtistResponse;
 import com.deepak.music.artist.dto.CreateArtistRequest;
+import com.deepak.music.artist.dto.UpdateArtistNameRequest;
 import jakarta.validation.Valid;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
@@ -48,6 +49,16 @@ public class ArtistController {
             @PageableDefault(size = 20, sort = "createdAt") Pageable pageable) {
         Page<Artist> artists = artistService.list(pageable);
         Page<ArtistResponse> response = artists.map(ArtistResponse::from);
+        return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/{artistId}/name")
+    public ResponseEntity<ArtistResponse> updateArtistName(
+            @PathVariable UUID artistId,
+            @Valid @RequestBody UpdateArtistNameRequest request) {
+
+        Artist artist = artistService.updateName(artistId, request);
+        ArtistResponse response = ArtistResponse.from(artist);
         return ResponseEntity.ok(response);
     }
 }

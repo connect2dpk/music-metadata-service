@@ -9,6 +9,9 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -20,8 +23,21 @@ public class GlobalExceptionHandler {
         return problemDetail;
     }
 
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ProblemDetail handleValidationException(MethodArgumentNotValidException ex, WebRequest request) {
+        ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+        problemDetail.setTitle("VALIDATION_ERROR");
+        problemDetail.setDetail("Request validation failed");
+
+        Map<String, String> fieldErrors = new LinkedHashMap<>();
+        ex.getBindingResult().getFieldErrors()
+                .forEach(fieldError -> fieldErrors.put(fieldError.getField(), fieldError.getDefaultMessage()));
+        problemDetail.setProperty("errors", fieldErrors);
+
+        return problemDetail;
+    }
+
     @ExceptionHandler({
-            MethodArgumentNotValidException.class,
             MethodArgumentTypeMismatchException.class,
             MissingServletRequestParameterException.class,
             IllegalArgumentException.class
@@ -38,6 +54,14 @@ public class GlobalExceptionHandler {
         ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.INTERNAL_SERVER_ERROR);
         problemDetail.setTitle("INTERNAL_ERROR");
         problemDetail.setDetail("An unexpected error occurred");
+        return problemDetail;
+    }
+
+    @ExceptionHandler(ArtistConflictException.class)
+    public ProblemDetail handleOptimisticLocking(Exception ex, WebRequest request) {
+        ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+        problemDetail.setTitle("ARTIST_CONFLICT");
+        problemDetail.setDetail("Artist was modified by another request");
         return problemDetail;
     }
 

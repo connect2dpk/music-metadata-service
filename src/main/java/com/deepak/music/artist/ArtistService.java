@@ -2,6 +2,7 @@ package com.deepak.music.artist;
 
 
 import com.deepak.music.artist.dto.CreateArtistRequest;
+import com.deepak.music.artist.dto.UpdateArtistNameRequest;
 import com.deepak.music.common.exception.ArtistNotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -33,5 +34,14 @@ public class ArtistService {
 
     public Page<Artist> list(Pageable pageable) {
         return artistRepository.findAll(pageable);
+    }
+
+    @Transactional
+    public Artist updateName(UUID id, UpdateArtistNameRequest request) {
+        Artist artist = artistRepository.findById(id)
+                .orElseThrow(() -> new ArtistNotFoundException(id));
+
+        artist.setName(request.name());
+        return artistRepository.save(artist);
     }
 }

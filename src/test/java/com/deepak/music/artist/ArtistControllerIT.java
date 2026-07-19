@@ -30,6 +30,7 @@ class ArtistControllerIT extends AbstractIntegrationTest {
                         .content("{\"name\":\"Pink Floyd\"}"))
                 .andExpect(status().isCreated())
                 .andExpect(header().exists("Location"))
+                .andExpect(header().string("Location", containsString("/api/v1/artists/")))
                 .andExpect(jsonPath("$.name").value("Pink Floyd"))
                 .andExpect(jsonPath("$.id").isNotEmpty());
     }
@@ -39,7 +40,9 @@ class ArtistControllerIT extends AbstractIntegrationTest {
         mockMvc.perform(post("/api/v1/artists")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"\"}"))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.errors.name").value("Artist name cannot be blank"));
     }
 
     @Test
@@ -76,5 +79,44 @@ class ArtistControllerIT extends AbstractIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content", hasSize(greaterThanOrEqualTo(2))))
                 .andExpect(jsonPath("$.totalElements", greaterThanOrEqualTo(2)));
+    }
+
+    @Test
+    void testUpdateArtistNameSuccess() throws Exception {
+        Artist artist = new Artist();
+        artist.setName("Prince");
+        Artist saved = artistRepository.save(artist);
+
+        mockMvc.perform(patch("/api/v1/artists/" + saved.getId() + "/name")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"The Artist Formerly Known as Prince\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(saved.getId().toString()))
+                .andExpect(jsonPath("$.name").value("The Artist Formerly Known as Prince"));
+    }
+
+    @Test
+    void testUpdateArtistNameNotFound() throws Exception {
+        UUID nonExistentId = UUID.randomUUID();
+
+        mockMvc.perform(patch("/api/v1/artists/" + nonExistentId + "/name")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"New Name\"}"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.title").value("ARTIST_NOT_FOUND"));
+    }
+
+    @Test
+    void testUpdateArtistNameValidationError() throws Exception {
+        Artist artist = new Artist();
+        artist.setName("Initial Name");
+        Artist saved = artistRepository.save(artist);
+
+        mockMvc.perform(patch("/api/v1/artists/" + saved.getId() + "/name")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.errors.name").exists());
     }
 }
