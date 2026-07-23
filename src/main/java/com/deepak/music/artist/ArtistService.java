@@ -47,6 +47,10 @@ public class ArtistService {
         return artistRepository.findAll(pageable);
     }
 
+    /**
+     * Renames the artist. Protected by optimistic locking — a concurrent edit on the same
+     * version throws {@link OptimisticLockingException}, which maps to {@code 409 Conflict}.
+     */
     @Transactional
     public Artist updateName(UUID id, UpdateArtistNameRequest request) {
         log.info("Updating artist name for id={} to name='{}'", id, request.name());

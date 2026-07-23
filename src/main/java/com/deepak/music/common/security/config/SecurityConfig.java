@@ -20,6 +20,17 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.access.AccessDeniedHandlerImpl;
 
+/**
+ * Configures Spring Security for the service.
+ *
+ * <p>Security model:
+ * <ul>
+ *   <li>Stateless sessions — no HTTP session is created.</li>
+ *   <li>JWT bearer token is validated on every request via {@link JwtAuthenticationFilter}.</li>
+ *   <li>All GET endpoints are public; write endpoints require {@code ROLE_ADMIN}.</li>
+ *   <li>Unauthenticated requests return {@code 401}; insufficient role returns {@code 403}.</li>
+ * </ul>
+ */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(

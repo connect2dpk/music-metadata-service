@@ -3,6 +3,8 @@ package com.deepak.music.common.security.controller;
 import com.deepak.music.common.security.dto.LoginRequest;
 import com.deepak.music.common.security.dto.LoginResponse;
 import com.deepak.music.common.security.jwt.JwtTokenProvider;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Tag(name = "Auth", description = "Authentication APIs")
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
@@ -28,6 +31,7 @@ public class AuthController {
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
 
+    @Operation(summary = "Authenticate user and issue a JWT")
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
         log.info("Login attempt for user: {}", loginRequest.username());

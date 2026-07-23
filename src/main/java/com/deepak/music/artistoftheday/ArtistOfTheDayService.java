@@ -12,6 +12,13 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.util.Optional;
 
+/**
+ * Determines the featured artist for the current UTC day using a stateless rotation algorithm.
+ *
+ * <p>Algorithm: {@code offset = floorMod(epochDay, totalArtists)}, then selects the artist
+ * at that offset ordered by {@code created_at, id}. This guarantees a fair, deterministic
+ * cycle across all artists with no scheduler or persistent state required.
+ */
 @Service
 @Transactional(readOnly = true)
 public class ArtistOfTheDayService {
@@ -31,6 +38,9 @@ public class ArtistOfTheDayService {
         this.clock = clock;
     }
 
+    /**
+     * Returns the artist designated for today, or empty if the catalogue has no artists.
+     */
     public Optional<Artist> getArtistOfTheDay() {
         long totalArtists = artistRepository.count();
         if(totalArtists == 0) {

@@ -31,6 +31,10 @@ public class Artist {
     @UpdateTimestamp
     private OffsetDateTime updatedAt;
 
+    /**
+     * Optimistic locking version. Incremented on each update; a stale write yields a
+     * {@code 409 Conflict} response rather than silently overwriting concurrent changes.
+     */
     @Version
     private Long version;
 }

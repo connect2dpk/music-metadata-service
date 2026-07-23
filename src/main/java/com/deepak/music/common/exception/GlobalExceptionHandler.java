@@ -25,6 +25,13 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 
+/**
+ * Central exception handler for all REST controllers.
+ *
+ * <p>Maps domain and infrastructure exceptions to RFC 9457 {@link ProblemDetail} responses,
+ * ensuring a consistent error shape across all endpoints. All messages are resolved through
+ * {@link MessageSource} to support i18n via the {@code Accept-Language} header.
+ */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
@@ -52,6 +59,7 @@ public class GlobalExceptionHandler {
         );
     }
 
+    /** Handles stale-version writes; returns {@code 409 Conflict}. */
     @ExceptionHandler({OptimisticLockingException.class, StaleObjectStateException.class})
     public ProblemDetail handleOptimisticLockingException(Exception ex, WebRequest request) {
         log.warn("Optimistic locking conflict detected", ex);

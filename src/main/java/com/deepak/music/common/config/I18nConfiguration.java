@@ -9,7 +9,7 @@ import java.util.Locale;
 
 /**
  * Stateless internationalization (i18n) configuration for REST APIs.
- * Locale is resolved from the HTTP Accept-Language header.
+ * Locale is resolved from the HTTP Accept-Language header (example Accept-Language:de).
  */
 @Configuration
 public class I18nConfiguration {
