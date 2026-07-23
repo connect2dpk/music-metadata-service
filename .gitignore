@@ -35,7 +35,8 @@ build/
 logs/
 *.log
 
-.env
+#.env - Commented out to keep it simple for now
+
 .DS_Store
 
 docker-data/
