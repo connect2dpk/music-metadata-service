@@ -2,6 +2,8 @@ package com.deepak.music.track;
 
 import com.deepak.music.track.dto.CreateTrackRequest;
 import com.deepak.music.track.dto.TrackResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
@@ -14,6 +16,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import java.net.URI;
 import java.util.UUID;
 
+@Tag(name = "Tracks", description = "Track catalog APIs")
 @RestController
 public class TrackController {
     private final TrackService trackService;
@@ -22,6 +25,7 @@ public class TrackController {
         this.trackService = trackService;
     }
 
+    @Operation(summary = "Add a track to the artist")
     @PostMapping("/api/v1/artists/{artistId}/tracks")
     public ResponseEntity<TrackResponse> addTrack(
             @PathVariable UUID artistId,
@@ -39,6 +43,7 @@ public class TrackController {
         return ResponseEntity.created(uri).body(trackResponse);
     }
 
+    @Operation(summary = "List tracks for the artist")
     @GetMapping("/api/v1/artists/{artistId}/tracks")
     public ResponseEntity<Page<TrackResponse>> listTracks(
             @PathVariable UUID artistId,

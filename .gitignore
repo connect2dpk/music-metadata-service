@@ -39,4 +39,4 @@ logs/
 .DS_Store
 
 docker-data/
-/Requirement.md
+/docs/Requirement.md

@@ -1,5 +1,11 @@
 package com.deepak.music.common.exception;
 
+import jakarta.validation.ConstraintViolationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -7,28 +13,54 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+    private final MessageSource messageSource;
+
+    public GlobalExceptionHandler(MessageSource messageSource) {
+        this.messageSource = messageSource;
+    }
 
     @ExceptionHandler(ApiException.class)
     public ProblemDetail handleApiException(ApiException ex, WebRequest request) {
-        ProblemDetail problemDetail = ProblemDetail.forStatus(ex.getHttpStatus());
-        problemDetail.setTitle(ex.getErrorCode());
-        problemDetail.setDetail(ex.getMessage());
-        return problemDetail;
+        Locale locale = LocaleContextHolder.getLocale();
+        String errorMessage = messageSource.getMessage(
+                ex.getMessageKey(),
+                ex.getMessageArgs(),
+                ex.getMessageKey(),
+                locale
+        );
+        log.warn("API exception handled: errorCode={} messageKey={}", ex.getErrorCode(), ex.getMessageKey());
+        return buildProblem(
+                HttpStatus.valueOf(ex.getHttpStatus()),
+                ex.getErrorCode(),
+                errorMessage,
+                request
+        );
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ProblemDetail handleValidationException(MethodArgumentNotValidException ex, WebRequest request) {
-        ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
-        problemDetail.setTitle("VALIDATION_ERROR");
-        problemDetail.setDetail("Request validation failed");
+        log.warn("Validation failed for request: {}", ex.getMessage());
+        Locale locale = LocaleContextHolder.getLocale();
+        String errorMessage = messageSource.getMessage("validation.request_failed", null, locale);
+        ProblemDetail problemDetail = buildProblem(
+                HttpStatus.BAD_REQUEST,
+                "VALIDATION_ERROR",
+                errorMessage,
+                request
+        );
 
         Map<String, String> fieldErrors = new LinkedHashMap<>();
         ex.getBindingResult().getFieldErrors()
@@ -42,30 +74,48 @@ public class GlobalExceptionHandler {
             MethodArgumentTypeMismatchException.class,
             MissingServletRequestParameterException.class,
             IllegalArgumentException.class,
-            HttpMessageNotReadableException.class
+            HttpMessageNotReadableException.class,
+            ConstraintViolationException.class
     })
     public ProblemDetail handleBadRequest(Exception ex, WebRequest request) {
-        ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
-        problemDetail.setTitle("BAD_REQUEST");
-        problemDetail.setDetail("Invalid request parameters");
-        return problemDetail;
+        log.warn("Bad request handled: {}", ex.getMessage());
+        Locale locale = LocaleContextHolder.getLocale();
+        String errorMessage = messageSource.getMessage("common.bad_request", null, locale);
+        return buildProblem(
+                HttpStatus.BAD_REQUEST,
+                "BAD_REQUEST",
+                errorMessage,
+                request
+        );
     }
 
     @ExceptionHandler(Exception.class)
     public ProblemDetail handleGenericException(Exception ex, WebRequest request) {
-        ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.INTERNAL_SERVER_ERROR);
-        problemDetail.setTitle("INTERNAL_ERROR");
-        problemDetail.setDetail("An unexpected error occurred");
-        return problemDetail;
+        log.error("Unexpected error occurred", ex);
+        Locale locale = LocaleContextHolder.getLocale();
+        String errorMessage = messageSource.getMessage("common.internal_error", null, locale);
+        return buildProblem(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "INTERNAL_ERROR",
+                errorMessage,
+                request
+        );
     }
 
-    @ExceptionHandler(ArtistConflictException.class)
-    public ProblemDetail handleOptimisticLocking(Exception ex, WebRequest request) {
-        ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.CONFLICT);
-        problemDetail.setTitle("ARTIST_CONFLICT");
-        problemDetail.setDetail("Artist was modified by another request");
+    private ProblemDetail buildProblem(HttpStatus status, String title, String detail, WebRequest request) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(status, detail);
+        problemDetail.setTitle(title);
+        problemDetail.setProperty("timestamp", OffsetDateTime.now(ZoneOffset.UTC));
+
+        if(request instanceof ServletWebRequest servletWebRequest) {
+            problemDetail.setProperty("path", servletWebRequest.getRequest().getRequestURI());
+        }
+
+        String correlationId = MDC.get("correlationId");
+        if(correlationId != null) {
+            problemDetail.setProperty("correlationId", correlationId);
+        }
         return problemDetail;
     }
-
 
 }

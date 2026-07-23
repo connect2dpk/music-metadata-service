@@ -3,6 +3,8 @@ package com.deepak.music.artist;
 import com.deepak.music.artist.dto.ArtistResponse;
 import com.deepak.music.artist.dto.CreateArtistRequest;
 import com.deepak.music.artist.dto.UpdateArtistNameRequest;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
@@ -15,6 +17,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import java.net.URI;
 import java.util.UUID;
 
+@Tag(name = "Artists", description = "Artist management APIs")
 @RestController
 @RequestMapping("/api/v1/artists")
 public class ArtistController {
@@ -25,6 +28,7 @@ public class ArtistController {
         this.artistService = artistService;
     }
 
+    @Operation(summary = "Create artist")
     @PostMapping
     public ResponseEntity<ArtistResponse> createArtist(@Valid @RequestBody CreateArtistRequest request) {
         Artist artist = artistService.create(request);
@@ -36,6 +40,7 @@ public class ArtistController {
         return ResponseEntity.created(uri).body(artistResponse);
     }
 
+    @Operation(summary = "Get artist by id")
     @GetMapping("/{artistId}")
     public ResponseEntity<ArtistResponse> getArtist(@PathVariable UUID artistId) {
         Artist artist = artistService.getById(artistId);
@@ -43,6 +48,7 @@ public class ArtistController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "List artists with pagination")
     @GetMapping
     public ResponseEntity<Page<ArtistResponse>> listArtists(
             @ParameterObject
@@ -52,6 +58,7 @@ public class ArtistController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "Rename artist")
     @PatchMapping("/{artistId}/name")
     public ResponseEntity<ArtistResponse> updateArtistName(
             @PathVariable UUID artistId,

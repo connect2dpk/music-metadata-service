@@ -8,9 +8,10 @@ public class ArtistNotFoundException extends ApiException{
 
     public ArtistNotFoundException(UUID artistId) {
         super(
-                "Artist with id " + artistId + " not found",
+                "artist.not_found",
                 HttpStatus.NOT_FOUND.value(),
-                "ARTIST_NOT_FOUND"
+                "ARTIST_NOT_FOUND",
+                artistId
         );
     }
 }

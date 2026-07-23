@@ -88,7 +88,38 @@ class TrackControllerIT extends AbstractIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"title\":\"Numb\",\"genre\":\"NOT_A_GENRE\",\"durationSeconds\":187}"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.title").value("BAD_REQUEST"));
+                .andExpect(jsonPath("$.title").value("BAD_REQUEST"))
+                .andExpect(jsonPath("$.detail").value("Invalid request parameters"));
+    }
+
+    @Test
+    void testAddTrackInvalidGenreGermanLocale() throws Exception {
+        Artist artist = new Artist();
+        artist.setName("German Locale Artist");
+        Artist savedArtist = artistRepository.save(artist);
+
+        mockMvc.perform(post("/api/v1/artists/" + savedArtist.getId() + "/tracks")
+                        .header("Accept-Language", "de")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"title\":\"Numb\",\"genre\":\"NOT_A_GENRE\",\"durationSeconds\":187}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title").value("BAD_REQUEST"))
+                .andExpect(jsonPath("$.detail", containsString("Anforderungsparameter")));
+    }
+
+    @Test
+    void testAddTrackInvalidGenreEnglishLocale() throws Exception {
+        Artist artist = new Artist();
+        artist.setName("English Locale Artist");
+        Artist savedArtist = artistRepository.save(artist);
+
+        mockMvc.perform(post("/api/v1/artists/" + savedArtist.getId() + "/tracks")
+                        .header("Accept-Language", "en")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"title\":\"Numb\",\"genre\":\"NOT_A_GENRE\",\"durationSeconds\":187}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title").value("BAD_REQUEST"))
+                .andExpect(jsonPath("$.detail").value("Invalid request parameters"));
     }
 
     @Test

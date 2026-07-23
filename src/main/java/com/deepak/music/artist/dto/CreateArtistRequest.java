@@ -4,8 +4,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 public record CreateArtistRequest(
-        @NotBlank(message = "Artist name cannot be blank")
-        @Size(max = 255, message = "Artist name must be at most 255 characters")
+        @NotBlank(message = "{validation.artist.name.required}")
+        @Size(max = 255, message = "{validation.artist.name.max}")
         String name
 ) {
 }

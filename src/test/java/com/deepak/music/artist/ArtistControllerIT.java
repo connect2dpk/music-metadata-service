@@ -62,7 +62,42 @@ class ArtistControllerIT extends AbstractIntegrationTest {
         UUID nonExistentId = UUID.randomUUID();
 
         mockMvc.perform(get("/api/v1/artists/" + nonExistentId))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.title").value("ARTIST_NOT_FOUND"))
+                .andExpect(jsonPath("$.detail").value("Artist with id " + nonExistentId + " was not found."));
+    }
+
+    @Test
+    void testGetArtistNotFoundGermanLocale() throws Exception {
+        UUID nonExistentId = UUID.randomUUID();
+
+        mockMvc.perform(get("/api/v1/artists/" + nonExistentId)
+                        .header("Accept-Language", "de"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.title").value("ARTIST_NOT_FOUND"))
+                .andExpect(jsonPath("$.detail", containsString(nonExistentId.toString())))
+                .andExpect(jsonPath("$.detail", containsString("wurde nicht gefunden")));
+    }
+
+    @Test
+    void testGetArtistNotFoundEnglishLocale() throws Exception {
+        UUID nonExistentId = UUID.randomUUID();
+
+        mockMvc.perform(get("/api/v1/artists/" + nonExistentId)
+                        .header("Accept-Language", "en"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.title").value("ARTIST_NOT_FOUND"))
+                .andExpect(jsonPath("$.detail").value("Artist with id " + nonExistentId + " was not found."));
+    }
+
+    @Test
+    void testLangQueryParameterDoesNotChangeLocale() throws Exception {
+        UUID nonExistentId = UUID.randomUUID();
+
+        mockMvc.perform(get("/api/v1/artists/" + nonExistentId)
+                        .param("lang", "de"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.detail").value("Artist with id " + nonExistentId + " was not found."));
     }
 
     @Test
@@ -118,5 +153,17 @@ class ArtistControllerIT extends AbstractIntegrationTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.title").value("VALIDATION_ERROR"))
                 .andExpect(jsonPath("$.errors.name").exists());
+    }
+
+    @Test
+    void testCreateArtistValidationErrorGermanLocale() throws Exception {
+        mockMvc.perform(post("/api/v1/artists")
+                        .header("Accept-Language", "de")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.detail").value("Anforderungsvalidierung fehlgeschlagen"))
+                .andExpect(jsonPath("$.errors.name", containsString("darf nicht leer sein")));
     }
 }

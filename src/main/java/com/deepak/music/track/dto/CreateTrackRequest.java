@@ -7,15 +7,15 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 
 public record CreateTrackRequest(
-        @NotBlank(message = "Track title cannot be blank")
-        @Size(max = 255, message = "Track title must be at most 255 characters")
+        @NotBlank(message = "{validation.track.title.required}")
+        @Size(max = 255, message = "{validation.track.title.max}")
         String title,
 
-        @NotNull(message = "Genre is required")
+        @NotNull(message = "{validation.track.genre.required}")
         Genre genre,
 
-        @NotNull(message = "Duration is required")
-        @Positive(message = "Duration must be greater than 0 seconds")
+        @NotNull(message = "{validation.track.duration.required}")
+        @Positive(message = "{validation.track.duration.positive}")
         Integer durationSeconds
 ) {
 }

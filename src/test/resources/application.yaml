@@ -16,4 +16,6 @@ spring:
 
 logging:
   level:
-    org.flywaydb: WARN
+    org.flywaydb:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} [corr=%X{correlationId}] - %msg%n"

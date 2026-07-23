@@ -7,7 +7,7 @@ import org.springframework.http.HttpStatus;
  */
 public class ArtistConflictException extends ApiException {
 
-    public ArtistConflictException(String message) {
-        super(message, HttpStatus.CONFLICT.value(), "ARTIST_CONFLICT");
+    public ArtistConflictException() {
+        super("artist.conflict", HttpStatus.CONFLICT.value(), "ARTIST_CONFLICT");
     }
 }
