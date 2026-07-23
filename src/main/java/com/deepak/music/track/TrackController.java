@@ -3,6 +3,7 @@ package com.deepak.music.track;
 import com.deepak.music.track.dto.CreateTrackRequest;
 import com.deepak.music.track.dto.TrackResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springdoc.core.annotations.ParameterObject;
@@ -10,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -25,8 +27,9 @@ public class TrackController {
         this.trackService = trackService;
     }
 
-    @Operation(summary = "Add a track to the artist")
+    @Operation(summary = "Add a track to the artist", security = @SecurityRequirement(name = "bearerAuth"))
     @PostMapping("/api/v1/artists/{artistId}/tracks")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<TrackResponse> addTrack(
             @PathVariable UUID artistId,
             @RequestBody @Valid CreateTrackRequest request

@@ -4,6 +4,7 @@ import com.deepak.music.artist.dto.ArtistResponse;
 import com.deepak.music.artist.dto.CreateArtistRequest;
 import com.deepak.music.artist.dto.UpdateArtistNameRequest;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springdoc.core.annotations.ParameterObject;
@@ -11,6 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -28,8 +30,9 @@ public class ArtistController {
         this.artistService = artistService;
     }
 
-    @Operation(summary = "Create artist")
+    @Operation(summary = "Create artist", security = @SecurityRequirement(name = "bearerAuth"))
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ArtistResponse> createArtist(@Valid @RequestBody CreateArtistRequest request) {
         Artist artist = artistService.create(request);
         ArtistResponse artistResponse = ArtistResponse.from(artist);
@@ -58,8 +61,9 @@ public class ArtistController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "Rename artist")
+    @Operation(summary = "Rename artist", security = @SecurityRequirement(name = "bearerAuth"))
     @PatchMapping("/{artistId}/name")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ArtistResponse> updateArtistName(
             @PathVariable UUID artistId,
             @Valid @RequestBody UpdateArtistNameRequest request) {

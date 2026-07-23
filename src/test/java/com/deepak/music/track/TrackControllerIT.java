@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -39,8 +40,11 @@ class TrackControllerIT extends AbstractIntegrationTest {
         Artist artist = new Artist();
         artist.setName("Metallica");
         Artist savedArtist = artistRepository.save(artist);
+        
+        String adminToken = generateAdminToken();
 
         mockMvc.perform(post("/api/v1/artists/" + savedArtist.getId() + "/tracks")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"title\":\"One\",\"genre\":\"METAL\",\"durationSeconds\":447}"))
                 .andExpect(status().isCreated())
@@ -54,10 +58,24 @@ class TrackControllerIT extends AbstractIntegrationTest {
     }
 
     @Test
+    void testAddTrackUnauthorized() throws Exception {
+        Artist artist = new Artist();
+        artist.setName("Metallica");
+        Artist savedArtist = artistRepository.save(artist);
+
+        mockMvc.perform(post("/api/v1/artists/" + savedArtist.getId() + "/tracks")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"title\":\"One\",\"genre\":\"METAL\",\"durationSeconds\":447}"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
     void testAddTrackArtistNotFound() throws Exception {
         UUID nonExistentArtistId = UUID.randomUUID();
+        String adminToken = generateAdminToken();
 
         mockMvc.perform(post("/api/v1/artists/" + nonExistentArtistId + "/tracks")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"title\":\"Believer\",\"genre\":\"ROCK\",\"durationSeconds\":204}"))
                 .andExpect(status().isNotFound())
@@ -69,8 +87,10 @@ class TrackControllerIT extends AbstractIntegrationTest {
         Artist artist = new Artist();
         artist.setName("Imagine Dragons");
         Artist savedArtist = artistRepository.save(artist);
+        String adminToken = generateAdminToken();
 
         mockMvc.perform(post("/api/v1/artists/" + savedArtist.getId() + "/tracks")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"title\":\"Believer\",\"genre\":\"ROCK\",\"durationSeconds\":0}"))
                 .andExpect(status().isBadRequest())
@@ -83,8 +103,10 @@ class TrackControllerIT extends AbstractIntegrationTest {
         Artist artist = new Artist();
         artist.setName("Linkin Park");
         Artist savedArtist = artistRepository.save(artist);
+        String adminToken = generateAdminToken();
 
         mockMvc.perform(post("/api/v1/artists/" + savedArtist.getId() + "/tracks")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"title\":\"Numb\",\"genre\":\"NOT_A_GENRE\",\"durationSeconds\":187}"))
                 .andExpect(status().isBadRequest())
@@ -97,8 +119,10 @@ class TrackControllerIT extends AbstractIntegrationTest {
         Artist artist = new Artist();
         artist.setName("German Locale Artist");
         Artist savedArtist = artistRepository.save(artist);
+        String adminToken = generateAdminToken();
 
         mockMvc.perform(post("/api/v1/artists/" + savedArtist.getId() + "/tracks")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
                         .header("Accept-Language", "de")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"title\":\"Numb\",\"genre\":\"NOT_A_GENRE\",\"durationSeconds\":187}"))
@@ -112,8 +136,10 @@ class TrackControllerIT extends AbstractIntegrationTest {
         Artist artist = new Artist();
         artist.setName("English Locale Artist");
         Artist savedArtist = artistRepository.save(artist);
+        String adminToken = generateAdminToken();
 
         mockMvc.perform(post("/api/v1/artists/" + savedArtist.getId() + "/tracks")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
                         .header("Accept-Language", "en")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"title\":\"Numb\",\"genre\":\"NOT_A_GENRE\",\"durationSeconds\":187}"))
@@ -145,7 +171,8 @@ class TrackControllerIT extends AbstractIntegrationTest {
         mockMvc.perform(get("/api/v1/artists/" + savedArtist.getId() + "/tracks"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content", hasSize(2)))
-                .andExpect(jsonPath("$.totalElements").value(2));
+                .andExpect(jsonPath("$.totalElements").value(2))
+                .andExpect(jsonPath("$.size").value(20));
     }
 
     @Test
@@ -158,6 +185,31 @@ class TrackControllerIT extends AbstractIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content", hasSize(0)))
                 .andExpect(jsonPath("$.totalElements").value(0));
+    }
+
+    @Test
+    void testListTracksWithCustomPageSize() throws Exception {
+        Artist artist = new Artist();
+        artist.setName("Custom Page Artist");
+        Artist savedArtist = artistRepository.save(artist);
+
+        mockMvc.perform(get("/api/v1/artists/" + savedArtist.getId() + "/tracks")
+                        .param("size", "5"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.size").value(5));
+    }
+
+    @Test
+    void testListTracksPageSizeExceedsMaximum() throws Exception {
+        Artist artist = new Artist();
+        artist.setName("Max Page Artist");
+        Artist savedArtist = artistRepository.save(artist);
+
+        // Request page size of 500, should be capped to max 100
+        mockMvc.perform(get("/api/v1/artists/" + savedArtist.getId() + "/tracks")
+                        .param("size", "500"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.size").value(100));
     }
 
     @Test
@@ -196,5 +248,6 @@ class TrackControllerIT extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.content[0].title").value("Rock Song"))
                 .andExpect(jsonPath("$.content[0].genre").value("ROCK"));
     }
+
 }
 

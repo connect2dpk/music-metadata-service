@@ -3,7 +3,9 @@ package com.deepak.music.track;
 import com.deepak.music.artist.Artist;
 import com.deepak.music.artist.ArtistRepository;
 import com.deepak.music.common.exception.ArtistNotFoundException;
+import com.deepak.music.common.exception.OptimisticLockingException;
 import com.deepak.music.track.dto.CreateTrackRequest;
+import org.hibernate.StaleObjectStateException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -39,9 +41,14 @@ public class TrackService {
         track.setDurationSeconds(request.durationSeconds());
         track.setArtist(artist);
 
-        Track savedTrack = trackRepository.save(track);
-        log.info("Added track id={} for artistId={} title='{}'", savedTrack.getId(), artistId, savedTrack.getTitle());
-        return savedTrack;
+        try {
+            Track savedTrack = trackRepository.save(track);
+            log.info("Added track id={} for artistId={} title='{}'", savedTrack.getId(), artistId, savedTrack.getTitle());
+            return savedTrack;
+        } catch (StaleObjectStateException e) {
+            log.warn("Optimistic lock conflict detected when adding track for artistId={}", artistId, e);
+            throw new OptimisticLockingException("optimistic.lock.conflict");
+        }
     }
 
     public Page<Track> listTracks(UUID artistId, Genre genre, Pageable pageable) {

@@ -1,6 +1,7 @@
 package com.deepak.music.common.exception;
 
 import jakarta.validation.ConstraintViolationException;
+import org.hibernate.StaleObjectStateException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -45,6 +47,20 @@ public class GlobalExceptionHandler {
         return buildProblem(
                 HttpStatus.valueOf(ex.getHttpStatus()),
                 ex.getErrorCode(),
+                errorMessage,
+                request
+        );
+    }
+
+    @ExceptionHandler({OptimisticLockingException.class, StaleObjectStateException.class})
+    public ProblemDetail handleOptimisticLockingException(Exception ex, WebRequest request) {
+        log.warn("Optimistic locking conflict detected", ex);
+        Locale locale = LocaleContextHolder.getLocale();
+        String errorMessage = messageSource.getMessage("optimistic.lock.conflict", null, 
+                "Resource was modified by another request", locale);
+        return buildProblem(
+                HttpStatus.CONFLICT,
+                "CONFLICT",
                 errorMessage,
                 request
         );
@@ -84,6 +100,19 @@ public class GlobalExceptionHandler {
         return buildProblem(
                 HttpStatus.BAD_REQUEST,
                 "BAD_REQUEST",
+                errorMessage,
+                request
+        );
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ProblemDetail handleNoResourceFound(NoResourceFoundException ex, WebRequest request) {
+        log.warn("Resource not found: {}", ex.getResourcePath());
+        Locale locale = LocaleContextHolder.getLocale();
+        String errorMessage = messageSource.getMessage("common.not_found", null, "Resource not found", locale);
+        return buildProblem(
+                HttpStatus.NOT_FOUND,
+                "NOT_FOUND",
                 errorMessage,
                 request
         );

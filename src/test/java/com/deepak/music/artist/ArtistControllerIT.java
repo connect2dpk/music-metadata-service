@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -25,7 +26,10 @@ class ArtistControllerIT extends AbstractIntegrationTest {
 
     @Test
     void testCreateArtistSuccess() throws Exception {
+        String adminToken = generateAdminToken();
+        
         mockMvc.perform(post("/api/v1/artists")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"Pink Floyd\"}"))
                 .andExpect(status().isCreated())
@@ -36,8 +40,30 @@ class ArtistControllerIT extends AbstractIntegrationTest {
     }
 
     @Test
-    void testCreateArtistValidationError() throws Exception {
+    void testCreateArtistUnauthorized() throws Exception {
         mockMvc.perform(post("/api/v1/artists")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Pink Floyd\"}"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void testCreateArtistForbidden() throws Exception {
+        // Generate a token for a non-admin user (this would work if there's a non-admin user in DB)
+        // For now, we test with invalid/expired token scenario
+        mockMvc.perform(post("/api/v1/artists")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer invalid_token_12345")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Pink Floyd\"}"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void testCreateArtistValidationError() throws Exception {
+        String adminToken = generateAdminToken();
+        
+        mockMvc.perform(post("/api/v1/artists")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"\"}"))
                 .andExpect(status().isBadRequest())
@@ -101,7 +127,7 @@ class ArtistControllerIT extends AbstractIntegrationTest {
     }
 
     @Test
-    void testListArtists() throws Exception {
+    void testListArtistsWithDefaultPagination() throws Exception {
         Artist artist1 = new Artist();
         artist1.setName("Queen");
         Artist artist2 = new Artist();
@@ -113,7 +139,33 @@ class ArtistControllerIT extends AbstractIntegrationTest {
         mockMvc.perform(get("/api/v1/artists"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content", hasSize(greaterThanOrEqualTo(2))))
-                .andExpect(jsonPath("$.totalElements", greaterThanOrEqualTo(2)));
+                .andExpect(jsonPath("$.totalElements", greaterThanOrEqualTo(2)))
+                .andExpect(jsonPath("$.size").value(20));
+    }
+
+    @Test
+    void testListArtistsWithCustomPageSize() throws Exception {
+        Artist artist1 = new Artist();
+        artist1.setName("Artist1");
+        Artist artist2 = new Artist();
+        artist2.setName("Artist2");
+
+        artistRepository.save(artist1);
+        artistRepository.save(artist2);
+
+        mockMvc.perform(get("/api/v1/artists")
+                        .param("size", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.size").value(10));
+    }
+
+    @Test
+    void testListArtistsPageSizeExceedsMaximum() throws Exception {
+        // Request page size of 200, should be capped to max 100
+        mockMvc.perform(get("/api/v1/artists")
+                        .param("size", "200"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.size").value(100));
     }
 
     @Test
@@ -121,8 +173,11 @@ class ArtistControllerIT extends AbstractIntegrationTest {
         Artist artist = new Artist();
         artist.setName("Prince");
         Artist saved = artistRepository.save(artist);
+        
+        String adminToken = generateAdminToken();
 
         mockMvc.perform(patch("/api/v1/artists/" + saved.getId() + "/name")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"The Artist Formerly Known as Prince\"}"))
                 .andExpect(status().isOk())
@@ -131,10 +186,25 @@ class ArtistControllerIT extends AbstractIntegrationTest {
     }
 
     @Test
+    void testUpdateArtistNameUnauthorized() throws Exception {
+        Artist artist = new Artist();
+        artist.setName("Prince");
+        Artist saved = artistRepository.save(artist);
+
+        mockMvc.perform(patch("/api/v1/artists/" + saved.getId() + "/name")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"New Name\"}"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
     void testUpdateArtistNameNotFound() throws Exception {
         UUID nonExistentId = UUID.randomUUID();
+        
+        String adminToken = generateAdminToken();
 
         mockMvc.perform(patch("/api/v1/artists/" + nonExistentId + "/name")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"New Name\"}"))
                 .andExpect(status().isNotFound())
@@ -146,8 +216,11 @@ class ArtistControllerIT extends AbstractIntegrationTest {
         Artist artist = new Artist();
         artist.setName("Initial Name");
         Artist saved = artistRepository.save(artist);
+        
+        String adminToken = generateAdminToken();
 
         mockMvc.perform(patch("/api/v1/artists/" + saved.getId() + "/name")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"\"}"))
                 .andExpect(status().isBadRequest())
@@ -157,7 +230,10 @@ class ArtistControllerIT extends AbstractIntegrationTest {
 
     @Test
     void testCreateArtistValidationErrorGermanLocale() throws Exception {
+        String adminToken = generateAdminToken();
+        
         mockMvc.perform(post("/api/v1/artists")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
                         .header("Accept-Language", "de")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"\"}"))

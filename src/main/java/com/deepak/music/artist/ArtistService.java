@@ -4,6 +4,8 @@ package com.deepak.music.artist;
 import com.deepak.music.artist.dto.CreateArtistRequest;
 import com.deepak.music.artist.dto.UpdateArtistNameRequest;
 import com.deepak.music.common.exception.ArtistNotFoundException;
+import com.deepak.music.common.exception.OptimisticLockingException;
+import org.hibernate.StaleObjectStateException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -52,8 +54,13 @@ public class ArtistService {
                 .orElseThrow(() -> new ArtistNotFoundException(id));
 
         artist.setName(request.name());
-        Artist savedArtist = artistRepository.save(artist);
-        log.info("Updated artist id={} name='{}'", savedArtist.getId(), savedArtist.getName());
-        return savedArtist;
+        try {
+            Artist savedArtist = artistRepository.save(artist);
+            log.info("Updated artist id={} name='{}'", savedArtist.getId(), savedArtist.getName());
+            return savedArtist;
+        } catch (StaleObjectStateException e) {
+            log.warn("Optimistic lock conflict detected for artist id={}", id, e);
+            throw new OptimisticLockingException("optimistic.lock.conflict");
+        }
     }
 }
