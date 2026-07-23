@@ -70,7 +70,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/artists").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/artists/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/artist-of-the-day").permitAll()
-                        .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                        .requestMatchers("/actuator/health", "/actuator/info", "/actuator/metrics",
+                                "/actuator/metrics/**", "/actuator/prometheus").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**").permitAll()
                         // Protected endpoints
                         .requestMatchers(HttpMethod.POST, "/api/v1/artists").hasRole("ADMIN")

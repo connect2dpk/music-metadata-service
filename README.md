@@ -1,6 +1,6 @@
 # Music Metadata Service
 
-REST API implementing the Music Metadata Service described in the [docs/Requirement.md](docs/Requirement.md).
+REST API implementing a Music Metadata Service for managing artist and track metadata.
 
 The application supports the following functionality:
 
@@ -71,6 +71,19 @@ Swagger is available after the application starts:
 
 ---
 
+## Operational Endpoints
+
+The application exposes Spring Boot Actuator endpoints for health checks and operational monitoring.
+
+| Endpoint | Purpose |
+| -------- | ------- |
+| `http://localhost:8080/actuator/health` | Application health status |
+| `http://localhost:8080/actuator/info` | Application information |
+| `http://localhost:8080/actuator/metrics` | Application metrics |
+| `http://localhost:8080/actuator/prometheus` | Prometheus metrics endpoint |
+
+---
+
 ## Running the Application
 
 ### Prerequisites
@@ -95,6 +108,20 @@ The API will be available at:
 ```text
 http://localhost:8080
 ```
+
+### Database
+
+The application uses PostgreSQL running as a Docker container.
+
+Local database connection details:
+
+| Property | Value |
+| -------- | ----- |
+| Database | `musicdb` |
+| Host | `localhost` |
+| Port | `5432` |
+| Username | `postgres` |
+| Password | `s3cr3t` |
 
 ### Default Administrative User
 
